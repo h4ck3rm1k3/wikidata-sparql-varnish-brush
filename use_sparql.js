@@ -1,27 +1,18 @@
 'use strict';
 
 var request = require('request-promise'); // https://www.npmjs.com/package/request-promise
-
+var traverse = require('traverse');
+var SparqlParser = require('sparqljs').Parser;
+var SparqlGenerator = require('sparqljs').Generator;
+var N3 = require('n3');
 
 var renames = {}
 
+var owl_sameAs = 'http://www.w3.org/2002/07/owl#sameAs';
 
-//dofetch('https://raw.githubusercontent.com/h4ck3rm1k3/wikidata_varnish/master/enmap.ttl')
 
-var N3 = require('n3');
-var SparqlParser = require('sparqljs').Parser;
-var n3parser = N3.Parser();
-var SparqlGenerator = require('sparqljs').Generator;
 var parser = new SparqlParser();
 var generator = new SparqlGenerator();
-/*
- * queryType
- * variables
- * where
- * order
- * type
- * prefixes
-*/
 
 function dofetch(url, resolve, reject) {
   return request(
@@ -29,35 +20,37 @@ function dofetch(url, resolve, reject) {
   )
 }
 
-function process_ont(s) {
+function process_sameas(i) {
+  if (i.predicate == owl_sameAs){
+    renames[i.subject]=i.object
+    //add rename console.log(i.subject +" > "+ i.object);
+  }
+  else {
+    //SKIP console.log(i);
+  }
+}
 
-  console.log("len" + s.length);
+function process_statements(g) {
+    for (var e in g) {
+      var i = g[e];
+      process_sameas(i);
+    }
+
+}
+
+function process_ont(s, url) {
+
+  //console.log("len" + s.length);
   
   if (null == s)  {
     console.log("no result");
     return
   } else {
-    
+
+    var n3parser = N3.Parser({ documentIRI: url + "#" });
     var g = n3parser.parse(s);
-    
-    for (var e in g) {
-      var i = g[e];
-      if (i.predicate == 'http://www.w3.org/2002/07/owl#sameAs'){
-        //          console.log("s:\t" +i.subject);
-        //          console.log("res" +i.predicate);
-        //console.log("o:\t" +i.object);
-        
-        //renames[i.object]=i.subject
-        renames[i.subject]=i.object
-      }
-    }
-    // { subject: 'enmap.ttl#official_language',
-    //   predicate: 'http://www.w3.org/2002/07/owl#sameAs',
-    //   object: 'http://www.wikidata.org/prop/direct/P37',
-    //   graph: '' }       
+    process_statements(g)
   }      
-
-
 }
 
 function bgp(o) {
@@ -74,23 +67,44 @@ function bgp(o) {
       if (t.predicate == 'https://raw.githubusercontent.com/h4ck3rm1k3/wikidata_varnish/master/varnish.ttl#import'){
         var ontology = t.object;       
         var url = ontology.substring(0,ontology.indexOf('#'));
-        //console.log("url:"+ url+"\n");
+        //console.log("fetch url:"+ url+"\n");
         var ont = dofetch(url)
-
+        
         //console.log("new promise1\t" +ont);
         promises.push(ont)
 
-      }
-    }      
+      }      
+    } else {
+      //console.log(t);
+      process_sameas(t); // look for single replacements
+    }
   }
   return promises;
 }
 
-//for c in myJSONText.where
 
+function postprocess_query(q) {
+  // now replace all the urls
+  
+  traverse(q).forEach(function (x) {
+    //console.log(x);
 
+    //console.log(">" +JSON.stringify(x));
+    if (x in renames){
+      //console.log(">"+x);
+      this.update(renames[x]);
+    }
+  });
+  
+  var generatedQuery = generator.stringify(q);
+  console.log("generated:\n" +generatedQuery);
+ 
+}
 
 function process_query(q) {
+
+  //console.log(">" +JSON.stringify(q));
+
   var promises = []
   for (var k in q.where) {
     var w = q.where[k]
@@ -102,42 +116,14 @@ function process_query(q) {
           var o = bgp(po)
           for (p in o) {
             var p2 = o[p]
-            //console.log("new promise\t" +p2);
-            //var t = JSON.stringify(p2);
-            //            console.log("new promise\t" +t);
-            // var promise = new Promise(
-            //   function (resolve, reject)
-            //   {
-            //     p2.then(function(data) {
-            //       //console.log(JSON.stringify(p2.uri.pathname));
-            //       console.log("get\t" +     p2.uri.pathname);                  
-            //       process_ont(data)
-            //     })   
-            //   });
             promises.push(p2);          
           }
-
-          //console.log(o);
         }
       }
-    } else {
-      
+    } else {      
     }
   }
-
-  // console.log("promises\t" +promises);
-  //  for (var p in promises) {
-  //    var po = promises[p];
-
-
-  //    po.then(function(data) {
-  //      console.log(JSON.stringify(po.uri.pathname));
-  //      console.log("get\t" +     po.uri.pathname);
-       
-  //      process_ont(data)
-  //    })   
-  //  }
-
+  
   Promise.all(promises).then(function(data) {
     //console.log(data);
     //console.log(JSON.stringify(data));
@@ -145,32 +131,25 @@ function process_query(q) {
     for (var d in data){
       //console.log(d);
       var d2 = data[d];
-      //var dt = JSON.stringify(data[d]);
-      //console.log(d2);
+      var url = d2.req.res.request.href;
+      //console.log("HREF:"+url);
+//      console.log(d2.req);
+  //    console.log("HREF"+d2.req.request.href);
+      //console.log("HREF:"+d2.req.href);
       var body = d2.body;
-      process_ont(body)
+      process_ont(body, url)
     }
 
-    var renamest = JSON.stringify(renames);         
-    console.log("renames\t" +renamest);
+    //var renamest = JSON.stringify(renames);         
+    //console.log("renames\t" +renamest);
+
+    // now we have loaded all the renames, lets rewrite the query
+    postprocess_query(q);
 
   });
-  //   // all loaded
-    
-  // }, function() {
-  //      // one or more failed
-  //      console.log("failed");
-  //    });
+
   
 }
-
-
-
-//print();
-/*$('#query').html(query);
-$('#dump').html(myJSONText);
-$('#clean').html(generatedQuery);
-*/
 
 
 function main() {
@@ -190,16 +169,16 @@ function main() {
   SELECT ?countryLabel WHERE {
     OPTIONAL {varnish:done varnish:import enmap:ontology}
     OPTIONAL {varnish:done varnish:import enent:ontology}
-    OPTIONAL {objects:country owl:sameas wd:Q146}
-    ?country enmap:sameas objects:country.
+    OPTIONAL {objects:Cat owl:sameAs wd:Q146}
+    ?country enmap:instance_of enent:country.
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
   }
   ORDER BY ?countryLabel
   `
 
   var parsedQuery = parser.parse(query);
-  generatedQuery = generator.stringify(parsedQuery);          
-  var myJSONText = JSON.stringify(parsedQuery);
+  
+  //var myJSONText = JSON.stringify(parsedQuery);
   process_query(parsedQuery);
 }
 
