@@ -1,3 +1,6 @@
+Wikidata proposal here:
+https://www.mediawiki.org/wiki/Talk:Wikidata_query_service#Adding_simple_sameas_reasoning
+
 This utility allows you to write sparql using user defined aliases.
 The names to be replaced are declared in ontologies using owl:sameAs.
 The ontologies are imported using the varnish:import predicate.
