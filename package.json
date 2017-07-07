@@ -4,17 +4,11 @@
   "description": "make the names tasty",
   "main": "use_sparql.js",
   "dependencies": {
-    "es6-promise": "^4.1.1",
-    "fetch": "^1.1.0",
-    "isomorphic-fetch": "^2.2.1",
-    "jsoniq": "^0.0.8",
-    "jsonpath": "^0.2.11",
     "n3": "^0.10.0",
-    "node-fetch": "^1.7.1",
     "request": "^2.81.0",
     "request-promise": "^4.2.1",
     "sparqljs": "^1.5.1",
-    "traverse": "^0.6.6"
+    "traverse": "^0.6.6" 
   },
   "devDependencies": {},
   "scripts": {
