@@ -1,9 +1,9 @@
-var expect = require("chai").expect;
-var sparqlVarnish = require("../lib/sparql_varnish");
+var expect = require( 'chai' ).expect;
+var sparqlVarnish = require( '../lib/sparql_varnish' );
 
-describe("sparql_varnish", function(){
-  describe("rewriteQuery()", function(){
-    it('rewrite this query', function(done) {
+describe( 'sparql_varnish', function() {
+  describe( 'rewriteQuery()', function() {
+    it( 'rewrite this query', function( done ) {
 
       var query = `
       PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -26,7 +26,7 @@ describe("sparql_varnish", function(){
       ORDER BY ?countryLabel
       `;
 
-      this.timeout(400);
+      this.timeout( 400 );
 
       var query2 = `PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX bd: <http://www.bigdata.com/rdf#>
@@ -46,27 +46,24 @@ SELECT ?countryLabel WHERE {
 ORDER BY ?countryLabel`;
 
       var response = '';
-      sparqlVarnish.rewriteQuery(query,function (data) {
+      sparqlVarnish.rewriteQuery( query, function ( data ) {
         response = data;
         //console.log('got' + data);
         //assert.equal(data, query2);
 
-
-        if (response != query2 ) {
-          done ("Error");
-        }        
+        if ( response != query2 ) {
+          done( 'Error' );
+        }
 
         done();
-      });
-    });
-  });
-});
+      } );
+    } );
+  } );
+} );
 
 function main() {
-  var generatedQuery ='ERROR';      
-  
+  var generatedQuery = 'ERROR';
 
-  
 }
 
 //main();
