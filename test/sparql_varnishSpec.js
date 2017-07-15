@@ -1,8 +1,8 @@
 var expect = require("chai").expect;
-var sparql_varnish = require("../lib/sparql_varnish");
+var sparqlVarnish = require("../lib/sparql_varnish");
 
 describe("sparql_varnish", function(){
-  describe("rewrite_query()", function(){
+  describe("rewriteQuery()", function(){
     it('rewrite this query', function(done) {
 
       var query = `
@@ -45,8 +45,8 @@ SELECT ?countryLabel WHERE {
 }
 ORDER BY ?countryLabel`;
 
-      response = '';
-      sparql_varnish.rewrite_query(query,function (data) {
+      var response = '';
+      sparqlVarnish.rewriteQuery(query,function (data) {
         response = data;
         //console.log('got' + data);
         //assert.equal(data, query2);

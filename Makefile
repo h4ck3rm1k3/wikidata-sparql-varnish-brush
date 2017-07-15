@@ -1,4 +1,7 @@
+grunt :
+	grunt jshint
+
 .PHONY dobuild :
-	browserify lib/sparql_varnish.js -s sparql_varnish  > build/sparql_varnish.js
+	browserify lib/sparql_varnish.js -s sparqlVarnish  > build/sparql_varnish.js
 test:
-	node use_sparql.js
+	./node_modules/mocha/bin/mocha
