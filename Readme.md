@@ -52,3 +52,9 @@ SELECT ?countryLabel WHERE {
 }
 ORDER BY ?countryLabel
 ```
+
+
+# Implementation
+
+Started to implement the jshint styles from wikidata sparql query. More to do.
+Not all jshint tests pass.
